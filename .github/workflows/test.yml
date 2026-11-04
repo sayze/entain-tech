@@ -1,0 +1,62 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [racing, api]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      # golangci-lint v2 needs a modern toolchain, so lint with the latest
+      # stable Go rather than the go 1.16 declared in go.mod.
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
+          working-directory: ${{ matrix.module }}
+
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [racing, api]
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build ./...
+
+      # -race requires cgo, which go-sqlite3 needs anyway.
+      - name: Run unit tests
+        run: go test -race -v ./...

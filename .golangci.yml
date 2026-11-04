@@ -1,0 +1,26 @@
+# Shared golangci-lint config for every module in this repo (racing, api, ...).
+# golangci-lint walks up from the working directory to find this file.
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gocritic
+    - misspell
+    - revive
+    - bodyclose
+    - nilerr
+    - nilnil
+    - errorlint
+  exclusions:
+    # Skip generated protobuf/gateway code (*.pb.go, *.pb.gw.go).
+    generated: lax
+
+formatters:
+  enable:
+    - gofumpt
