@@ -1,3 +1,4 @@
+// Package db provides SQLite-backed repositories for racing data.
 package db
 
 import (

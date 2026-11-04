@@ -1,3 +1,4 @@
+// Package service implements the racing gRPC service.
 package service
 
 import (
@@ -6,6 +7,7 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Racing is the gRPC server interface for the racing service.
 type Racing interface {
 	// ListRaces will return a collection of races.
 	ListRaces(ctx context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error)
@@ -21,7 +23,8 @@ func NewRacingService(racesRepo db.RacesRepo) Racing {
 	return &racingService{racesRepo}
 }
 
-func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error) {
+// ListRaces returns the races that match the request filter.
+func (s *racingService) ListRaces(_ context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error) {
 	races, err := s.racesRepo.List(in.Filter)
 	if err != nil {
 		return nil, err
