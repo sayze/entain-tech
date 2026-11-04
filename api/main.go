@@ -1,3 +1,5 @@
+// Command api runs the REST gateway that proxies HTTP requests to the
+// backend gRPC services.
 package main
 
 import (

@@ -29,7 +29,10 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
+          # Keep this in step with "go-version: stable" above. An older
+          # golangci-lint can't read the export data that a newer Go writes,
+          # and fails with a "typecheck" error.
+          version: v2.15.0
           working-directory: ${{ matrix.module }}
 
   unit:

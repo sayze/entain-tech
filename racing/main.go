@@ -1,3 +1,4 @@
+// Command racing runs the racing gRPC service.
 package main
 
 import (
@@ -12,9 +13,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var (
-	grpcEndpoint = flag.String("grpc-endpoint", "localhost:9000", "gRPC server endpoint")
-)
+var grpcEndpoint = flag.String("grpc-endpoint", "localhost:9000", "gRPC server endpoint")
 
 func main() {
 	flag.Parse()
