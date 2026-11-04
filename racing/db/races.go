@@ -83,6 +83,13 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		}
 	}
 
+	// Visible is optional: nil means "any visibility", so only filter on it
+	// when the caller has set it explicitly (true or false).
+	if filter.Visible != nil {
+		clauses = append(clauses, "visible = ?")
+		args = append(args, filter.GetVisible())
+	}
+
 	if len(clauses) != 0 {
 		query += " WHERE " + strings.Join(clauses, " AND ")
 	}
