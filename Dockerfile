@@ -6,6 +6,12 @@ WORKDIR /src
 # toolchain here and link statically so the binary runs on scratch.
 RUN apk add --no-cache ca-certificates build-base
 
+# go-sqlite3 v1.14.6 calls pread64/pwrite64 and uses off64_t. musl 1.2.4+
+# (Alpine 3.18+, which golang:*-alpine now uses) only declares those LFS64
+# names when _LARGEFILE64_SOURCE is defined, so without this the cgo build
+# fails with "'pread64' undeclared". go-sqlite3 v1.14.17+ no longer needs it.
+ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
+
 # racing and api are separate modules, so each downloads its own deps.
 COPY racing/go.mod racing/go.sum ./racing/
 COPY api/go.mod api/go.sum ./api/
