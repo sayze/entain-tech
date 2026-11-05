@@ -108,6 +108,23 @@ Before you do so, please ensure you have the following installed. You can simply
 go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 google.golang.org/genproto/googleapis/api google.golang.org/grpc/cmd/protoc-gen-go-grpc google.golang.org/protobuf/cmd/protoc-gen-go
 ```
 
+### Possible Improvements
+
+- **Expose the List methods over `GET`.** `ListRaces` (`POST /v1/list-races`) and `ListEvents` (`POST /v1/list-events`) take their filter as a JSON body. Google's [List standard method](https://cloud.google.com/apis/design/standard_methods#list) maps to `GET` on the collection instead, e.g. `GET /v1/events?filter.sports=Soccer&filter.competition_ids=3`. grpc-gateway already fills request fields that aren't in the path from the query string, including nested and repeated ones, so this needs no handler changes. The existing `POST` routes can stay as `additional_bindings` so current callers keep working:
+
+  ```proto
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = {
+      get: "/v1/events"
+      additional_bindings { post: "/v1/list-events" body: "*" }
+    };
+  }
+  ```
+
+  `ListRaces` would then become `GET /v1/races`, matching `GET /v1/races/{id}`. `POST` is still worth keeping for long filters, such as many IDs, that could hit URL length limits.
+
+- **Stop committing a pre-seeded `racing/db/racing.db`.** The seed step uses `INSERT OR IGNORE`, so once the committed file has its 100 races, their `advertised_start_time`s are never refreshed. All of those times are now in the past, so every race comes back `CLOSED` and `OPEN` can't be seen without deleting the file first. Ignoring the file in git and seeding it on first run, or re-seeding start times relative to now on startup, would keep the demo data realistic. Schema changes would then apply cleanly too, since `CREATE TABLE IF NOT EXISTS` never alters an existing table.
+
 ### Good Reading
 
 - [Protocol Buffers](https://developers.google.com/protocol-buffers)
