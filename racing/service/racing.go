@@ -15,6 +15,9 @@ import (
 type Racing interface {
 	// ListRaces will return a collection of races.
 	ListRaces(ctx context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error)
+
+	// GetRace will return a single race by its ID.
+	GetRace(ctx context.Context, in *racing.GetRaceRequest) (*racing.Race, error)
 }
 
 // racingService implements the Racing interface.
@@ -41,4 +44,19 @@ func (s *racingService) ListRaces(_ context.Context, in *racing.ListRacesRequest
 	}
 
 	return &racing.ListRacesResponse{Races: races}, nil
+}
+
+// GetRace returns the race with the requested ID. A race that does not exist
+// is reported as codes.NotFound.
+func (s *racingService) GetRace(_ context.Context, in *racing.GetRaceRequest) (*racing.Race, error) {
+	race, err := s.racesRepo.Get(in.GetId())
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "race %d not found", in.GetId())
+		}
+
+		return nil, err
+	}
+
+	return race, nil
 }

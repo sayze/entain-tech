@@ -11,9 +11,21 @@ service Racing {
   rpc ListRaces(ListRacesRequest) returns (ListRacesResponse) {
     option (google.api.http) = { post: "/v1/list-races", body: "*" };
   }
+
+  // GetRace returns the race with the given ID, or a NOT_FOUND error if
+  // there is no such race.
+  rpc GetRace(GetRaceRequest) returns (Race) {
+    option (google.api.http) = { get: "/v1/races/{id}" };
+  }
 }
 
 /* Requests/Responses */
+
+// Request for GetRace call.
+message GetRaceRequest {
+  // ID is the unique identifier of the race to fetch.
+  int64 id = 1;
+}
 
 // Request for ListRaces call.
 message ListRacesRequest {

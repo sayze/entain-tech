@@ -243,3 +243,30 @@ func TestRaceStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestRacesRepoGet(t *testing.T) {
+	race, err := newTestRepo(t).Get(1)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+
+	// Check every column is mapped, not just the ID, and that the derived
+	// status is filled in just as it is for List.
+	if race.Id != 1 || race.MeetingId != 1 || race.Name != "Charlie" || race.Number != 1 || !race.Visible {
+		t.Fatalf("got race %+v, want race 1 (meeting 1, Charlie, number 1, visible)", race)
+	}
+	if want := fixtureBase.Add(3 * time.Hour); !race.AdvertisedStartTime.AsTime().Equal(want) {
+		t.Fatalf("got advertised start time %v, want %v", race.AdvertisedStartTime.AsTime(), want)
+	}
+	if race.Status != racing.Race_OPEN {
+		t.Fatalf("got status %v, want OPEN", race.Status)
+	}
+}
+
+func TestRacesRepoGetNotFound(t *testing.T) {
+	for _, id := range []int64{0, -1, 5} {
+		if _, err := newTestRepo(t).Get(id); !errors.Is(err, ErrNotFound) {
+			t.Errorf("Get(%d): got err %v, want ErrNotFound", id, err)
+		}
+	}
+}
