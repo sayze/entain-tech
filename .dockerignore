@@ -5,3 +5,5 @@
 *.png
 api/api
 racing/racing
+sports/sports
+sports/db/sports.db

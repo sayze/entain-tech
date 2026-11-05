@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [racing, api]
+        module: [racing, sports, api]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        module: [racing, api]
+        module: [racing, sports, api]
     defaults:
       run:
         working-directory: ${{ matrix.module }}
