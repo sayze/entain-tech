@@ -27,12 +27,8 @@ type ListRacesRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	Filter *ListRacesRequestFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
-	// OrderBy sets the sort order of the results, using the Google API syntax:
-	// a comma-separated list of fields, each optionally followed by " desc" for
-	// descending order (ascending is the default), e.g.
-	// "advertised_start_time desc, name". Sortable fields are id, meeting_id,
-	// name, number, visible and advertised_start_time. When empty, races are
-	// sorted by advertised_start_time ascending.
+	// OrderBy sorts the results, e.g. "advertised_start_time desc, name".
+	// Defaults to advertised_start_time ascending.
 	OrderBy string `protobuf:"bytes,2,opt,name=order_by,json=orderBy,proto3" json:"order_by,omitempty"`
 }
 

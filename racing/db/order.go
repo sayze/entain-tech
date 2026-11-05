@@ -27,13 +27,8 @@ var raceSortColumns = map[string]string{
 	"advertised_start_time": "advertised_start_time",
 }
 
-// applyOrder appends an ORDER BY clause built from orderBy to query.
-//
-// orderBy follows the Google API design guide (AIP-132): a comma-separated
-// list of field names, each optionally followed by "asc" or "desc", e.g.
-// "advertised_start_time desc, name". An empty value falls back to
-// defaultRaceOrderBy. The id column is always appended as a final tie-breaker
-// (unless already present) so results come back in a stable order.
+// applyOrder appends an ORDER BY clause for orderBy (AIP-132 syntax) to
+// query, with id as a final tie-breaker.
 func applyOrder(query, orderBy string) (string, error) {
 	if strings.TrimSpace(orderBy) == "" {
 		orderBy = defaultRaceOrderBy
