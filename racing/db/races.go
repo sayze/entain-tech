@@ -28,11 +28,14 @@ type RacesRepo interface {
 type racesRepo struct {
 	db   *sql.DB
 	init sync.Once
+	// now returns the current time. It is used to derive each race's status
+	// and is a field so tests can substitute a fixed clock.
+	now func() time.Time
 }
 
 // NewRacesRepo creates a new races repository.
 func NewRacesRepo(db *sql.DB) RacesRepo {
-	return &racesRepo{db: db}
+	return &racesRepo{db: db, now: time.Now}
 }
 
 // Init prepares the race repository dummy data.
@@ -69,7 +72,7 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy string) 
 		return nil, err
 	}
 
-	return r.scanRaces(rows)
+	return r.scanRaces(rows, r.now())
 }
 
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
@@ -104,8 +107,12 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 	return query, args
 }
 
+// scanRaces maps rows to races. Each race's status is derived by comparing
+// its advertised start time with now, which the caller reads once so that
+// every race in a single response is judged against the same instant.
 func (r *racesRepo) scanRaces(
 	rows *sql.Rows,
+	now time.Time,
 ) ([]*racing.Race, error) {
 	var races []*racing.Race
 
@@ -127,9 +134,21 @@ func (r *racesRepo) scanRaces(
 		}
 
 		race.AdvertisedStartTime = ts
+		race.Status = raceStatus(advertisedStart, now)
 
 		races = append(races, &race)
 	}
 
 	return races, nil
+}
+
+// raceStatus derives a race's status from its advertised start time. A race
+// is CLOSED from the moment its advertised start time is reached, and OPEN
+// before that.
+func raceStatus(advertisedStart, now time.Time) racing.Race_Status {
+	if advertisedStart.After(now) {
+		return racing.Race_OPEN
+	}
+
+	return racing.Race_CLOSED
 }

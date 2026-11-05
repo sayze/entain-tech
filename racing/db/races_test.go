@@ -11,8 +11,16 @@ import (
 	"git.neds.sh/matty/entain/racing/proto/racing"
 )
 
+// fixtureBase is the advertised start time of the earliest fixture race.
+var fixtureBase = time.Date(2021, 2, 1, 10, 0, 0, 0, time.UTC)
+
+// fixtureNow is the fixed "current time" of the test repo's clock. Races 2
+// and 4 start exactly at this instant, race 3 before it and race 1 after it.
+var fixtureNow = fixtureBase.Add(1 * time.Hour)
+
 // newTestRepo returns a RacesRepo backed by an in-memory SQLite database
-// holding a small, fixed set of races (instead of the random seed data).
+// holding a small, fixed set of races (instead of the random seed data). Its
+// clock is frozen at fixtureNow so derived statuses are deterministic.
 func newTestRepo(t *testing.T) RacesRepo {
 	t.Helper()
 
@@ -32,7 +40,6 @@ func newTestRepo(t *testing.T) RacesRepo {
 	// Start times are deliberately not in id order, so tests can tell the
 	// default advertised_start_time sort apart from insertion order. Races
 	// 2 and 4 share a start time to exercise the id tie-breaker.
-	base := time.Date(2021, 2, 1, 10, 0, 0, 0, time.UTC)
 	fixtures := []struct {
 		id, meetingID int64
 		name          string
@@ -47,13 +54,13 @@ func newTestRepo(t *testing.T) RacesRepo {
 	for _, f := range fixtures {
 		if _, err := db.Exec(
 			`INSERT INTO races(id, meeting_id, name, number, visible, advertised_start_time) VALUES (?,?,?,?,?,?)`,
-			f.id, f.meetingID, f.name, 1, f.visible, base.Add(f.startOffset).Format(time.RFC3339),
+			f.id, f.meetingID, f.name, 1, f.visible, fixtureBase.Add(f.startOffset).Format(time.RFC3339),
 		); err != nil {
 			t.Fatalf("insert race %d: %v", f.id, err)
 		}
 	}
 
-	return NewRacesRepo(db)
+	return &racesRepo{db: db, now: func() time.Time { return fixtureNow }}
 }
 
 func TestRacesRepoList(t *testing.T) {
@@ -186,6 +193,52 @@ func TestRacesRepoListInvalidOrderBy(t *testing.T) {
 			_, err := newTestRepo(t).List(nil, tt.orderBy)
 			if !errors.Is(err, ErrInvalidOrderBy) {
 				t.Fatalf("got err %v, want ErrInvalidOrderBy", err)
+			}
+		})
+	}
+}
+
+func TestRacesRepoListStatus(t *testing.T) {
+	races, err := newTestRepo(t).List(nil, "id")
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+
+	// See fixtureNow: a race starting exactly now counts as CLOSED.
+	want := map[int64]racing.Race_Status{
+		1: racing.Race_OPEN,
+		2: racing.Race_CLOSED,
+		3: racing.Race_CLOSED,
+		4: racing.Race_CLOSED,
+	}
+	if len(races) != len(want) {
+		t.Fatalf("got %d races, want %d", len(races), len(want))
+	}
+	for _, r := range races {
+		if r.Status != want[r.Id] {
+			t.Errorf("race %d: got status %v, want %v", r.Id, r.Status, want[r.Id])
+		}
+	}
+}
+
+func TestRaceStatus(t *testing.T) {
+	now := time.Date(2021, 2, 1, 10, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name  string
+		start time.Time
+		want  racing.Race_Status
+	}{
+		{name: "future start is open", start: now.Add(time.Nanosecond), want: racing.Race_OPEN},
+		{name: "start exactly now is closed", start: now, want: racing.Race_CLOSED},
+		{name: "past start is closed", start: now.Add(-time.Nanosecond), want: racing.Race_CLOSED},
+		{name: "same instant in another zone is closed", start: now.In(time.FixedZone("AEST", 10*60*60)), want: racing.Race_CLOSED},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := raceStatus(tt.start, now); got != tt.want {
+				t.Fatalf("got %v, want %v", got, tt.want)
 			}
 		})
 	}
