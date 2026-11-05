@@ -23,7 +23,14 @@ type RacesRepo interface {
 	// to orderBy (see applyOrder for the syntax). It returns an error
 	// wrapping ErrInvalidOrderBy if orderBy is not valid.
 	List(filter *racing.ListRacesRequestFilter, orderBy string) ([]*racing.Race, error)
+
+	// Get will return the race with the given ID. It returns ErrNotFound
+	// if there is no such race.
+	Get(id int64) (*racing.Race, error)
 }
+
+// ErrNotFound is returned when a requested race does not exist.
+var ErrNotFound = errors.New("race not found")
 
 type racesRepo struct {
 	db   *sql.DB
@@ -73,6 +80,27 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter, orderBy string) 
 	}
 
 	return r.scanRaces(rows, r.now())
+}
+
+// Get returns the race with the given ID, or ErrNotFound if there is none.
+func (r *racesRepo) Get(id int64) (*racing.Race, error) {
+	// Reuse the list query and row scanning so a race fetched on its own
+	// always looks exactly like the same race in a list.
+	rows, err := r.db.Query(getRaceQueries()[racesList]+raceByIDClause, id)
+	if err != nil {
+		return nil, err
+	}
+
+	races, err := r.scanRaces(rows, r.now())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(races) == 0 {
+		return nil, ErrNotFound
+	}
+
+	return races[0], nil
 }
 
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {

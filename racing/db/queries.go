@@ -4,6 +4,9 @@ const (
 	racesList = "list"
 )
 
+// raceByIDClause narrows the races list query down to a single race.
+const raceByIDClause = " WHERE id = ?"
+
 func getRaceQueries() map[string]string {
 	return map[string]string{
 		racesList: `
