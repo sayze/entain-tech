@@ -8,6 +8,7 @@ Please treat the services provided as if they would live in a real-world environ
 
 - `api`: A basic REST gateway, forwarding requests onto service(s).
 - `racing`: A very bare-bones racing service.
+- `sports`: A sports events service, structured like `racing`.
 
 ```
 entain/
@@ -15,6 +16,11 @@ entain/
 │  ├─ proto/
 │  ├─ main.go
 ├─ racing/
+│  ├─ db/
+│  ├─ proto/
+│  ├─ service/
+│  ├─ main.go
+├─ sports/
 │  ├─ db/
 │  ├─ proto/
 │  ├─ service/
@@ -49,6 +55,15 @@ go build && ./racing
 ➜ INFO[0000] gRPC server listening on: localhost:9000
 ```
 
+... and, in another terminal window, our sports service (it creates and seeds `db/sports.db` on first run)...
+
+```bash
+cd ./sports
+
+go build && ./sports
+➜ INFO[0000] gRPC server listening on: localhost:9001
+```
+
 3. In another terminal window, start our api service...
 
 ```bash
@@ -62,6 +77,16 @@ go build && ./api
 
 ```bash
 curl -X "POST" "http://localhost:8000/v1/list-races" \
+     -H 'Content-Type: application/json' \
+     -d $'{
+  "filter": {}
+}'
+```
+
+... or for sports events (`filter` also accepts `competitionIds` and `sports`, e.g. `["Soccer"]`)...
+
+```bash
+curl -X "POST" "http://localhost:8000/v1/list-events" \
      -H 'Content-Type: application/json' \
      -d $'{
   "filter": {}
@@ -100,9 +125,9 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
 
 **Note:**
 
-To aid in proto generation following any changes, you can run `go generate ./...` from `api` and `racing` directories.
+To aid in proto generation following any changes, you can run `go generate ./...` from `api`, `racing` and `sports` directories.
 
-Before you do so, please ensure you have the following installed. You can simply run the following command below in each of `api` and `racing` directories.
+Before you do so, please ensure you have the following installed. You can simply run the following command below in each of `api`, `racing` and `sports` directories.
 
 ```
 go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 google.golang.org/genproto/googleapis/api google.golang.org/grpc/cmd/protoc-gen-go-grpc google.golang.org/protobuf/cmd/protoc-gen-go

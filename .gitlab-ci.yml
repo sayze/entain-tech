@@ -9,7 +9,9 @@ test:
     - go env | grep GOPATH
     - export PATH="$PATH:$(go env GOPATH)/bin"
     - (cd racing && go install ${GENERATE_DEPS})
+    - (cd sports && go install ${GENERATE_DEPS})
     - (cd api && go install ${GENERATE_DEPS})
   script:
     - "(cd racing && go generate ./... && go build)"
+    - "(cd sports && go generate ./... && go build)"
     - "(cd api && go generate ./... && go build)"

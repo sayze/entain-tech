@@ -1,5 +1,8 @@
 api/api
 racing/racing
+sports/sports
+# sports creates and seeds its database on first run; it is not committed.
+sports/db/sports.db
 .DS_STORE
 *.out
 .idea

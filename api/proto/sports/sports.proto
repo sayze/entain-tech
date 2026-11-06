@@ -1,0 +1,57 @@
+syntax = "proto3";
+package sports;
+
+option go_package = "/sports";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+service Sports {
+  // ListEvents returns a collection of sporting events, sorted by
+  // advertised start time.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = { post: "/v1/list-events", body: "*" };
+  }
+}
+
+/* Requests/Responses */
+
+// Request for ListEvents call.
+message ListEventsRequest {
+  ListEventsRequestFilter filter = 1;
+}
+
+// Response to ListEvents call.
+message ListEventsResponse {
+  repeated Event events = 1;
+}
+
+// Filter for listing events. Every field is optional, and the fields that
+// are set are combined with AND.
+message ListEventsRequestFilter {
+  // CompetitionIDs restricts the results to events in any of the given
+  // competitions.
+  repeated int64 competition_ids = 1;
+  // Sports restricts the results to events in any of the given sports,
+  // e.g. "Soccer". Matching is exact and case-sensitive.
+  repeated string sports = 2;
+}
+
+/* Resources */
+
+// A sporting event resource, e.g. a single match or game.
+message Event {
+  // ID represents a unique identifier for the event.
+  int64 id = 1;
+  // CompetitionID represents a unique identifier for the competition (league,
+  // tournament, etc.) the event belongs to.
+  int64 competition_id = 2;
+  // Name is the official name given to the event, e.g. "Lions v Tigers".
+  string name = 3;
+  // Sport is the sport the event is played in, e.g. "Soccer".
+  string sport = 4;
+  // Visible represents whether or not the event is visible.
+  bool visible = 5;
+  // AdvertisedStartTime is the time the event is advertised to start.
+  google.protobuf.Timestamp advertised_start_time = 6;
+}
